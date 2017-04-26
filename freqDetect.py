@@ -1,12 +1,13 @@
 #/usr/bin/env python
 import pyaudio
-from numpy import zeros,linspace,short,fromstring,hstack,transpose,log
+from numpy import zeros,linspace,short,fromstring,hstack,transpose,log2, log
 from scipy import fft, signal
 from time import sleep
 from scipy.signal import hamming, convolve
 import matplotlib.pyplot as plt
 import RPi.GPIO as GPIO
-from findfundfreq import *
+import sys
+#from findfundfreq import *
 #Volume Sensitivity, 0.05: Extremely Sensitive, may give false alarms
 #             0.1: Probably Ideal volume
 #             1: Poorly sensitive, will only go off for relatively loud
@@ -17,10 +18,10 @@ BANDWIDTH = 1
 frequencyoutput=True
 
 #notes in cents
-Note_E = 29
-Note_A = 24
-Note_D = 19
-Note_G = 14
+Note_E = 5
+Note_A = 0
+Note_D = 7
+Note_G = 2
 Note_B = 10
 Note_E4= 5
 
@@ -30,7 +31,8 @@ prevFreq = 0
 z1 = 10
 z2 = 0
 z0 = 0
-MIN_FREQUENCY = 50
+MIN_FREQUENCY = 60
+MAX_FREQUENCY = 500
 #Max & Min cent value we care about
 MAX_CENT = 11
 MIN_CENT = 0
@@ -72,153 +74,153 @@ while True:
             x1 = (y2 - y0) * .5 / (2 * y1 - y2 - y0)
 	    # find the frequency and output:w it
             thefreq = (which+x1)*SAMPLING_RATE/NUM_SAMPLES
-	   
-	    if thefreq > MIN_FREQUENCY:
-            	adjfreq = thefreq
+	    if thefreq < MIN_FREQUENCY or thefreq > MAX_FREQUENCY:
+            	adjfreq = -9999
    	    else:
            	 thefreq = which*SAMPLING_RATE/NUM_SAMPLES
 	    	 if thefreq > MIN_FREQUENCY:
             		adjfreq = thefreq
-        
+  	    #adjfreq = 140    
 	#print("Candidate Freq:  ", candidate_freq, which )
 	#sys.stdout.write("Frequency: %d  \r" % (adjfreq))
 	#sys.stdout.flush()
 	#cents conversion
-	adjfreq = 1200 *np.log2(440/adjfreq)/100
-	#adjfreq = adjfreq % 12
-
-	#Case statements
-	if abs(adjfreq - Note_E4 ) < 1:
-			
-		#In Tune E
-		if abs(adjfreq - Note_E4) < 0.1  :
-			print("You played an E!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.LOW)
-			GPIO.output(13, GPIO.HIGH) #GREEN
-		#Sharp E
-		elif (adjfreq - Note_E4) <  0  :
-			print("You are sharp E!")
-			GPIO.output(5, GPIO.HIGH) #RED
-			GPIO.output(6, GPIO.LOW) 
-			GPIO.output(13, GPIO.LOW) 
-		#Flat E
-		elif (adjfreq - Note_E4) > 0  :
-			print("You are flat E!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.HIGH) #BLUE
-			GPIO.output(13, GPIO.LOW)
-	elif abs(adjfreq - Note_E ) < 1:
-			
-		#In Tune E
-		if abs(adjfreq - Note_E) < 0.1  :
-			print("You played an E2!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.LOW)
-			GPIO.output(13, GPIO.HIGH)
-		#Sharp E
-		elif (adjfreq - Note_E) < 0  :
-			print("You are sharp E2!")
-			GPIO.output(5, GPIO.HIGH) #RED
-			GPIO.output(6, GPIO.LOW) 
-			GPIO.output(13, GPIO.LOW) 
-		#Flat E
-		elif (adjfreq - Note_E) > 0  :
-			print("You are flat E2!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.HIGH) #BLUE
-			GPIO.output(13, GPIO.LOW)
-	elif abs(adjfreq - Note_B ) < 1:
+	if (adjfreq != -9999):
+		adjfreq = 1200 *log2(440.0/adjfreq)/100
+		adjfreq = adjfreq % 12
 		
-		#In Tune B
-		if abs(adjfreq - Note_B) < 0.1  :
-			print("You played a B!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.LOW)
-			GPIO.output(13, GPIO.HIGH)
-		#Sharp B
-		elif (adjfreq - Note_B) < 0  :
-			print("You are sharp (B)!")
-			GPIO.output(5, GPIO.HIGH) #RED
-			GPIO.output(6, GPIO.LOW) 
-			GPIO.output(13, GPIO.LOW) 
-		#Flat B
-		elif (adjfreq - Note_B)  >0  :
-			print("You are flat (B)!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.HIGH) #BLUE
-			GPIO.output(13, GPIO.LOW)
-	elif abs(adjfreq - Note_G ) < 1:
+		#Case statements
+		if abs(adjfreq - Note_E4 ) < 1:
+			
+			#In Tune E
+			if abs(adjfreq - Note_E4) < 0.1  :
+				print("You played an E!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.LOW)
+				GPIO.output(13, GPIO.HIGH) #GREEN
+			#Sharp E
+			elif (adjfreq - Note_E4) <  0  :
+				print("You are sharp E!")
+				GPIO.output(5, GPIO.HIGH) #RED
+				GPIO.output(6, GPIO.LOW) 
+				GPIO.output(13, GPIO.LOW) 
+			#Flat E
+			elif (adjfreq - Note_E4) > 0  :
+				print("You are flat E!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.HIGH) #BLUE
+				GPIO.output(13, GPIO.LOW)
+		elif abs(adjfreq - Note_E ) < 1:
+				
+			#In Tune E
+			if abs(adjfreq - Note_E) < 0.1  :
+				print("You played an E2!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.LOW)
+				GPIO.output(13, GPIO.HIGH)
+			#Sharp E
+			elif (adjfreq - Note_E) < 0  :
+				print("You are sharp E2!")
+				GPIO.output(5, GPIO.HIGH) #RED
+				GPIO.output(6, GPIO.LOW) 
+				GPIO.output(13, GPIO.LOW) 
+			#Flat E
+			elif (adjfreq - Note_E) > 0  :
+				print("You are flat E2!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.HIGH) #BLUE
+				GPIO.output(13, GPIO.LOW)
+		elif abs(adjfreq - Note_B ) < 1:
+			
+			#In Tune B
+			if abs(adjfreq - Note_B) < 0.1  :
+				print("You played a B!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.LOW)
+				GPIO.output(13, GPIO.HIGH)
+			#Sharp B
+			elif (adjfreq - Note_B) < 0  :
+				print("You are sharp (B)!")
+				GPIO.output(5, GPIO.HIGH) #RED
+				GPIO.output(6, GPIO.LOW) 
+				GPIO.output(13, GPIO.LOW) 
+			#Flat B
+			elif (adjfreq - Note_B)  >0  :
+				print("You are flat (B)!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.HIGH) #BLUE
+				GPIO.output(13, GPIO.LOW)
+		elif abs(adjfreq - Note_G ) < 1:
+			
+			#In Tune g
+			if abs(adjfreq - Note_G) < 0.1  :
+				print("You played a G!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.LOW)
+				GPIO.output(13, GPIO.HIGH) #GREEN
+			#Sharp G
+			elif (adjfreq - Note_G) < 0  :
+				print("You are sharp (G)!")
+				GPIO.output(5, GPIO.HIGH) #RED
+				GPIO.output(6, GPIO.LOW) 
+				GPIO.output(13, GPIO.LOW) 
+			#Flat G
+			elif (adjfreq - Note_G) > 0  :
+				print("You are flat (G)!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.HIGH) #BLUE
+				GPIO.output(13, GPIO.LOW)
 		
-		#In Tune g
-		if abs(adjfreq - Note_G) < 0.1  :
-			print("You played a G!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.LOW)
-			GPIO.output(13, GPIO.HIGH) #GREEN
-		#Sharp G
-		elif (adjfreq - Note_G) < 0  :
-			print("You are sharp (G)!")
-			GPIO.output(5, GPIO.HIGH) #RED
-			GPIO.output(6, GPIO.LOW) 
-			GPIO.output(13, GPIO.LOW) 
-		#Flat G
-		elif (adjfreq - Note_G) > 0  :
-			print("You are flat (G)!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.HIGH) #BLUE
-			GPIO.output(13, GPIO.LOW)
+		elif abs(adjfreq - Note_D ) < 1:
 	
-	elif abs(adjfreq - Note_D ) < 1:
-
-		GPIO.output(5, GPIO.LOW)
-		GPIO.output(6, GPIO.LOW)
-		GPIO.output(13, GPIO.HIGH)
-		
-		#In Tune D
-		if abs(adjfreq - Note_D) < 0.1  :
-			print("You played a D!")
 			GPIO.output(5, GPIO.LOW)
 			GPIO.output(6, GPIO.LOW)
-			GPIO.output(13, GPIO.HIGH) #GREEN
-		#Sharp D
-		elif (adjfreq - Note_D) < 0  :
-			print("You are sharp (D)!")
-			GPIO.output(13, GPIO.LOW)
-			GPIO.output(5, GPIO.HIGH) #RED
-			GPIO.output(6, GPIO.LOW) 
-		#Flat D
-		elif (adjfreq - Note_D) > 0  :
-			print("You are flat (D)!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.HIGH) #BLUE
-			GPIO.output(13, GPIO.LOW) 
-	elif abs(adjfreq - Note_A ) < 1:
-		
-		#In tune A
-		if abs(adjfreq - Note_A) < 0.2  :
-			print("You played an A!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.LOW)
-			GPIO.output(13, GPIO.HIGH) #GREEN
-		#Sharp A
-		elif (adjfreq - Note_A) < 0  :
-			print("You are sharp A!")
-			GPIO.output(13, GPIO.LOW)
-			GPIO.output(5, GPIO.HIGH) #RED
-			GPIO.output(6, GPIO.LOW) 
-		#Flat A
-		elif (adjfreq - Note_A)  > 0  :
-			print("You are flat A!")
-			GPIO.output(5, GPIO.LOW)
-			GPIO.output(6, GPIO.HIGH) #BLUE
-			GPIO.output(13, GPIO.LOW)
-    	#all off
+			GPIO.output(13, GPIO.HIGH)
+			
+			#In Tune D
+			if abs(adjfreq - Note_D) < 0.1  :
+				print("You played a D!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.LOW)
+				GPIO.output(13, GPIO.HIGH) #GREEN
+			#Sharp D
+			elif (adjfreq - Note_D) < 0  :
+				print("You are sharp (D)!")
+				GPIO.output(13, GPIO.LOW)
+				GPIO.output(5, GPIO.HIGH) #RED
+				GPIO.output(6, GPIO.LOW) 
+			#Flat D
+			elif (adjfreq - Note_D) > 0  :
+				print("You are flat (D)!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.HIGH) #BLUE
+				GPIO.output(13, GPIO.LOW) 
+		elif abs(adjfreq - Note_A ) < 1:
+			
+			#In tune A
+			if abs(adjfreq - Note_A) < 0.2  :
+				print("You played an A!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.LOW)
+				GPIO.output(13, GPIO.HIGH) #GREEN
+			#Sharp A
+			elif (adjfreq - Note_A) < 0  :
+				print("You are sharp A!")
+				GPIO.output(13, GPIO.LOW)
+				GPIO.output(5, GPIO.HIGH) #RED
+				GPIO.output(6, GPIO.LOW) 
+			#Flat A
+			elif (adjfreq - Note_A)  > 0  :
+				print("You are flat A!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.HIGH) #BLUE
+				GPIO.output(13, GPIO.LOW)
+  	#all off
 	else:
 		GPIO.output(5, GPIO.LOW) 
 		GPIO.output(6, GPIO.LOW)
 		GPIO.output(13, GPIO.LOW)
-	sys.stdout.write("Frequency: %d  \r" % (adjfreq))
-	sys.stdout.flush()
+	#sys.stdout.write("Cent: %s  \r" % adjfreq)
+	#sys.stdout.flush()
 		
 	sleep(0.01)
