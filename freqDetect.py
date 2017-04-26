@@ -36,6 +36,10 @@ MAX_FREQUENCY = 500
 #Max & Min cent value we care about
 MAX_CENT = 11
 MIN_CENT = 0
+RELATIVE_FREQ = 440.0
+if len(sys.argv) > 1:
+	if (sys.argv[1] >= 415.0 and sys.argv[1] <= 445.0):
+		RELATIVE_FREQ = sys.argv[1]
 
 #GPIO set up for the Red Green and Blue colors
 GPIO.setmode(GPIO.BCM)
@@ -86,9 +90,10 @@ while True:
 	#sys.stdout.flush()
 	#cents conversion
 	if (adjfreq != -9999):
-		adjfreq = 1200 *log2(440.0/adjfreq)/100
+		#print "RAW FREQ:", adjfreq
+		adjfreq = 1200 *log2(RELATIVE_FREQ/adjfreq)/100
 		adjfreq = adjfreq % 12
-		
+		#print adjfreq
 		#Case statements
 		if abs(adjfreq - Note_E4 ) < 1:
 			
@@ -211,6 +216,26 @@ while True:
 				GPIO.output(6, GPIO.LOW) 
 			#Flat A
 			elif (adjfreq - Note_A)  > 0  :
+				print("You are flat A!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.HIGH) #BLUE
+				GPIO.output(13, GPIO.LOW)
+		elif abs(adjfreq - 12 ) < 1:
+			
+			#In tune A
+			if abs(adjfreq - 12) < 0.2  :
+				print("You played an A!")
+				GPIO.output(5, GPIO.LOW)
+				GPIO.output(6, GPIO.LOW)
+				GPIO.output(13, GPIO.HIGH) #GREEN
+			#Sharp A
+			elif (adjfreq - 12) < 0  :
+				print("You are sharp A!")
+				GPIO.output(13, GPIO.LOW)
+				GPIO.output(5, GPIO.HIGH) #RED
+				GPIO.output(6, GPIO.LOW) 
+			#Flat A
+			elif (adjfreq - 12)  > 0  :
 				print("You are flat A!")
 				GPIO.output(5, GPIO.LOW)
 				GPIO.output(6, GPIO.HIGH) #BLUE
