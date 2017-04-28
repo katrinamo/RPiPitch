@@ -1,3 +1,5 @@
+#THIS CODE IS HEAVILY BASED ON: 
+# https://benchodroff.com/2017/02/18/using-a-raspberry-pi-with-a-microphone-to-hear-an-audio-alarm-using-fft-in-python/
 #/usr/bin/env python
 import pyaudio
 from numpy import zeros,linspace,short,fromstring,hstack,transpose,log2, log
